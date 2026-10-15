@@ -93,15 +93,33 @@ def raw_call(tool: str, arguments: dict | None = None, _id: int = 1) -> dict:
     return {"_text": text}
 
 
-def call(tool: str, arguments: dict | None = None, cache_ttl: int = 0) -> dict:
-    """带本地缓存的 MCP 调用。cache_ttl > 0 时启用磁盘缓存（秒）。"""
+def call(tool: str, arguments: dict | None = None, cache_ttl: int = 0, refresh: bool = False) -> dict:
+    """带本地缓存的 MCP 调用。
+
+    cache_ttl > 0 时启用磁盘缓存（秒）；refresh=True 会强制回源并覆盖缓存，
+    用于「领券之后重新查卡包」这类必须先写后读的场景。
+    """
     arguments = arguments or {}
-    if cache_ttl > 0:
-        path = _cache_path(tool, arguments)
+    path = _cache_path(tool, arguments)
+    if cache_ttl > 0 and not refresh:
         CACHE_DIR.mkdir(parents=True, exist_ok=True)
         if path.exists() and time.time() - path.stat().st_mtime < cache_ttl:
             return json.loads(path.read_text(encoding="utf-8"))
-        data = raw_call(tool, arguments)
+    data = raw_call(tool, arguments)
+    if cache_ttl > 0:
+        CACHE_DIR.mkdir(parents=True, exist_ok=True)
         path.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
-        return data
-    return raw_call(tool, arguments)
+    return data
+
+
+def safe_call(tool: str, arguments: dict | None = None, **kwargs) -> tuple[bool, object, str]:
+    """不会抛异常的调用：返回 (是否成功, 数据, 错误描述)。
+
+    用于领券、查券这类「失败了也不该中断主流程」的可选步骤。
+    """
+    try:
+        return True, call(tool, arguments, **kwargs), ""
+    except McdMcpError as exc:
+        return False, None, str(exc)
+    except Exception as exc:  # noqa: BLE001 网络层异常同样降级处理
+        return False, None, f"{type(exc).__name__}: {exc}"

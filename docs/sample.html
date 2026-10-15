@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>麦麦最优解 · 点餐方案</title>
+<style>
+  :root { --ink:#12141a; --sub:#6b7280; --line:#e8eaee; --bg:#f6f7f9;
+          --gold:#ffc72c; --red:#da291c; --green:#0f9d58; --card:#ffffff; }
+  * { box-sizing: border-box; }
+  body { margin:0; padding:32px 16px; background:var(--bg); color:var(--ink);
+         font:15px/1.6 -apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif; }
+  .wrap { max-width:860px; margin:0 auto; }
+  .hero { background:linear-gradient(135deg,#da291c,#ff6a00); color:#fff; border-radius:18px;
+          padding:24px 28px; margin-bottom:20px; }
+  .hero h1 { margin:0 0 6px; font-size:24px; letter-spacing:.5px; }
+  .hero p { margin:0; opacity:.92; font-size:13px; }
+  .badges { margin-top:14px; display:flex; flex-wrap:wrap; gap:8px; }
+  .badge { background:rgba(255,255,255,.18); border:1px solid rgba(255,255,255,.3);
+           border-radius:999px; padding:4px 12px; font-size:12px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:16px;
+          padding:20px 22px; margin-bottom:14px; }
+  .card h2 { margin:0 0 14px; font-size:17px; display:flex; align-items:center; gap:8px; }
+  .tag { font-size:12px; font-weight:600; padding:3px 10px; border-radius:6px; color:#fff; }
+  .t-cheap { background:var(--red); } .t-full { background:#f0932b; } .t-balance { background:var(--green); }
+  .price { font-size:30px; font-weight:700; line-height:1.1; }
+  .price small { font-size:14px; font-weight:500; color:var(--sub); }
+  .save { color:var(--green); font-weight:600; }
+  .metrics { display:flex; flex-wrap:wrap; gap:18px; margin:14px 0 4px; font-size:13px; color:var(--sub); }
+  .metrics b { color:var(--ink); font-size:15px; }
+  ul.items { list-style:none; margin:14px 0 0; padding:0; border-top:1px dashed var(--line); }
+  ul.items li { display:flex; justify-content:space-between; gap:12px; padding:9px 0;
+                border-bottom:1px dashed var(--line); font-size:14px; }
+  ul.items .nm { flex:1; }
+  ul.items .kcal { color:var(--sub); font-size:13px; }
+  .coupon { margin-top:12px; background:#fff8e1; border-left:3px solid var(--gold);
+            padding:9px 12px; border-radius:0 8px 8px 0; font-size:13px; }
+  footer { text-align:center; color:var(--sub); font-size:12px; margin-top:24px; }
+</style>
+</head>
+<body><div class="wrap">
+<div class="hero">
+  <h1>麦麦最优解</h1>
+  <p>门店 麦当劳上海黄浦华旭国际大厦餐厅（1450713）｜2 人｜预算 ¥70｜人均热量上限 800 kcal</p>
+  <div class="badges"><span class="badge">中薯条买一送一</span><span class="badge">王牌小食拼</span><span class="badge">9.9元中杯冰美式</span></div>
+</div>
+<div class="card">
+  <h2><span class="tag t-cheap">最省钱</span></h2>
+  <div class="price">¥36.50 <small>人均 ¥18.25</small> · <span style="color:var(--sub)">原价 ¥36.50</span></div>
+  <div class="metrics">
+    <span>热量 <b>991</b> kcal</span>
+    <span>蛋白 <b>50</b> g</span>
+    <span>钠 <b>2139</b> mg</span>
+    <span>性价比 <b>27</b> kcal/元</span>
+  </div>
+  <ul class="items"><li><span class="nm">那么大鸡排（椒盐风味） ×2</span><span class="kcal">¥14.00 · 385 kcal</span></li><li><span class="nm">派 ×1</span><span class="kcal">¥8.50 · 221 kcal</span></li></ul>
+</div>
+<div class="card">
+  <h2><span class="tag t-full">最扛饿</span></h2>
+  <div class="price">¥41.50 <small>人均 ¥20.75</small> · <span class="save">省 ¥13.50</span>（原价 ¥55.00）</div>
+  <div class="metrics">
+    <span>热量 <b>1348</b> kcal</span>
+    <span>蛋白 <b>56</b> g</span>
+    <span>钠 <b>2322</b> mg</span>
+    <span>性价比 <b>32</b> kcal/元</span>
+  </div>
+  <ul class="items"><li><span class="nm">中薯条买一送一（券） ×1</span><span class="kcal">¥13.50 · 578 kcal</span></li><li><span class="nm">那么大鸡排（椒盐风味） ×2</span><span class="kcal">¥14.00 · 385 kcal</span></li></ul><div class="coupon">用券：中薯条买一送一</div>
+</div>
+<div class="card">
+  <h2><span class="tag t-balance">最均衡</span></h2>
+  <div class="price">¥66.50 <small>人均 ¥33.25</small> · <span style="color:var(--sub)">原价 ¥66.50</span></div>
+  <div class="metrics">
+    <span>热量 <b>1367</b> kcal</span>
+    <span>蛋白 <b>70</b> g</span>
+    <span>钠 <b>2609</b> mg</span>
+    <span>性价比 <b>21</b> kcal/元</span>
+  </div>
+  <ul class="items"><li><span class="nm">麦香鸡 ×1</span><span class="kcal">¥17.00 · 369 kcal</span></li><li><span class="nm">双层深海鳕鱼堡 ×1</span><span class="kcal">¥24.00 · 485 kcal</span></li><li><span class="nm">巨无霸 ×1</span><span class="kcal">¥25.50 · 513 kcal</span></li></ul>
+</div>
+<footer>由麦当劳 MCP 的真实菜单 · 价格 · 营养 · 优惠券数据求解生成</footer>
+</div></body></html>
