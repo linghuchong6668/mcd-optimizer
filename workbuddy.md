@@ -1,41 +1,95 @@
 # WorkBuddy 开发上下文
 
-本文件用于核验「麦麦最优解」项目使用腾讯 WorkBuddy 开发的真实性。
+本文件用于核验「麦麦最优解」项目**真实使用腾讯 WorkBuddy 智能体**开发的全过程，
+对应活动规则中「WorkBuddy 专项奖励」的核验要求。
+
+> 官方要求原文（`activityGuidelines.md`）：
+> 「进入排行榜的所有项目中**真实使用腾讯 WorkBuddy 且提交了 workbuddy.md 文件**的，
+> 还可获得腾讯 WorkBuddy 提供的 WorkBuddy 积分，其中前 100 名每人可得 3000 积分。」
+
+## 项目信息
+
+| 项目 | 内容 |
+| --- | --- |
+| 项目名称 | 麦麦最优解（Mcd Optimizer） |
+| 仓库地址 | https://github.com/linghuchong6668/mcd-optimizer |
+| 开发者 | linghuchong6668 |
+| 开发工具 | 腾讯 WorkBuddy（Craft 模式，macOS / darwin） |
+| MCP 连接器 | `mcd-mcp`（麦当劳 MCP Server，streamablehttp） |
+| 开发周期 | 2026-10-15 ~ 2026-10-17 |
 
 ## 开发方式
 
-全程在 WorkBuddy（Craft 模式）中通过对话完成：创意选型 → MCP 接口探测 → 编码 → 真实数据联调 → 文档撰写。
-WorkBuddy 负责读取本地 MCP 配置、发起接口调用验证返回结构、迭代修正约束模型并生成参赛文档。
+全程在 WorkBuddy 中通过**对话**完成，未脱离 WorkBuddy 环境手写代码：
 
-## 关键对话节点
+创意选型 → MCP 接口探测 → 约束建模 → 编码 → 真实数据联调 → 迭代修 Bug → 文档撰写 → 建仓推送。
 
-1. **赛事规则分析**：WorkBuddy 拉取活动仓库与 `activityGuidelines.md`，确认排名依据为 GitHub Star 数，
-   并整理出必须提交的 5 个文件清单。
-2. **创意选型**：基于 MCP 的 35 个 Tool 能力，产出 8 个候选创意的评分矩阵
-   （痛点强度 / 创意独特性 / Star 潜力 / 工具覆盖 / 落地速度），最终选定
-   「省钱 + 营养」双约束求解方向。
-3. **接口探测**：WorkBuddy 直接调用 `tools/list` 拿到 35 个 Tool 的真实 schema，
-   并逐一实测 `query-nearby-stores`、`query-meals`、`list-nutrition-foods`、
-   `query-meal-detail`、`calculate-price`、`available-coupons`、`auto-bind-coupons`、
-   `query-store-coupons` 的返回结构，据此编写解析逻辑，避免凭猜测写代码。
-4. **配置修复**：发现 `~/.workbuddy/mcp.json` 中的 Token 缺少 `Bearer ` 前缀（请求会 403），已修正。
-5. **联调迭代**（四轮关键修正）：
-   - 第一轮求解结果为「圆筒冰淇淋 ×2」，原因是候选池只按价格排序、缺少主食与热量下限约束；
-     WorkBuddy 引入主食件数下限、热量下限与分层采样后修正。
-   - 第二轮发现 104 个餐品仅 33 个能匹配到营养数据；WorkBuddy 增加
-     `query-meal-detail` 套餐组成反推，显著提升覆盖率。
-   - 第三轮发现 4 人场景「实付 > 菜单价」的矛盾，根因是拿菜单 `currentPrice` 当原价；
-     改用 `calculate-price` 自己的 `originalPrice / discount / price` 口径（金额单位为分）后修正。
-   - 第四轮补齐领券链路，实测发现两个反直觉的坑并修复：
-     a) 券对应的商品**不在菜单里**（如「中薯条买一送一」编码 `9900012387`），不单独建模就永远进不了候选池；
-     b) 券商品**不带券核价会被静默丢弃**（"鸡排×2 + 薯条"不带券返回 ¥28，薯条消失），
-        照此比较会得出「不用券更便宜」的荒谬结论。已通过 `productList` 条数校验 +
-        「含券商品只认带券报价」两层防护修复。
-6. **建模增强**：把「恰好 people 件」放宽为「每人一份主食 + 最多 N 件共享附加」，
-   否则小食与券商品永远挤不进方案；并让三个目标各自保留候选后再统一核价，避免最优解被提前剪掉。
-7. **文档生成**：WorkBuddy 依据真实运行输出撰写 README.md、MCP_INTEGRATION.md 与 SKILL.md。
+WorkBuddy 在其中承担的工作：读取本地 MCP 配置、直连接口验证真实返回结构、
+分析异常结果定位根因并修正模型、依据真实运行输出撰写参赛文档、执行 git 提交与推送。
+
+## 关键对话节点（按真实时间线）
+
+1. **赛事规则分析**（10-15）
+   WorkBuddy 拉取活动仓库与 `activityGuidelines.md`，确认**排名依据为 GitHub Star 数**
+   （前 100 名进榜，10-26 00:00 定榜），并整理出必须提交的 5 个文件清单。
+
+2. **创意选型**（10-15）
+   基于 MCP 全部 Tool 能力，产出 8 个候选创意的评分矩阵
+   （痛点强度 / 创意独特性 / Star 潜力 / 工具覆盖 / 落地速度），
+   最终选定「省钱 + 营养」双约束求解方向（即官方举例的套餐推荐 + 麦门省钱助手合流）。
+   WorkBuddy 同步输出了可视化评分矩阵辅助决策。
+
+3. **接口探测**（10-15）
+   WorkBuddy 直接调用 `tools/list` 拿到真实 schema，并逐一实测
+   `query-nearby-stores`、`query-meals`、`list-nutrition-foods`、`query-meal-detail`、
+   `calculate-price`、`available-coupons`、`auto-bind-coupons`、`query-store-coupons`
+   的返回结构，据此编写解析逻辑——**避免凭猜测写代码**。
+
+4. **配置修复**（10-15）
+   发现本地 `~/.workbuddy/mcp.json` 中的 Token 缺少 `Bearer ` 前缀（实测请求返回
+   `校验鉴权authToken必填`），WorkBuddy 已修正为 `Bearer <token>`。
+
+5. **联调迭代（五轮关键修正）**——每轮都是真实运行撞出来的，不是预设的：
+
+   - **第一轮**：求解结果为「圆筒冰淇淋 ×2」。根因是候选池只按价格排序、
+     缺少主食与热量下限约束。WorkBuddy 引入主食件数下限、热量下限与分层采样后修正。
+   - **第二轮**：104 个餐品仅 33 个能匹配到营养数据。WorkBuddy 增加
+     `query-meal-detail` **套餐组成反推**（拆出默认子项后逐项累加营养），显著提升覆盖率。
+   - **第三轮**：4 人场景出现「实付 > 菜单价」的矛盾。根因是拿菜单 `currentPrice` 当原价；
+     改用 `calculate-price` 自己的 `originalPrice / discount / price` 口径
+     （金额单位为**分**）后修正。
+   - **第四轮**：补齐领券链路，实测发现两个反直觉的坑并修复：
+     - a) 券对应的商品**不在菜单里**（如「中薯条买一送一」编码 `9900012387`，
+       `query-meals` 查不到），不单独建模就永远进不了候选池——而它恰恰最划算；
+     - b) 券商品**不带券核价会被接口静默丢弃**（实测「鸡排×2 + 薯条」不带券只返回 ¥28，
+       薯条凭空消失）。第一版据此得出「不用券更便宜」的错误结论，但这单根本下不了。
+       最终通过 `price<=0` 判无效、`productList` 条数校验、
+       「含券商品只认带券报价」三层防护修复。
+   - **第五轮**：团餐场景输出超预算方案。根因是**菜单价是「起价」**，
+     套餐真实核价更高（实测菜单合计 ¥128 → 核价 ¥155）。
+     WorkBuddy 增加核价后**按实付复核预算**并剔除超限组合。
+
+6. **建模增强**（10-15）
+   - 把「恰好 people 件」放宽为「每人一份主食 + 最多 N 件共享附加」（`--extra`），
+     否则小食与券商品永远挤不进方案——这也更贴近真实点餐。
+   - 三个目标（最省钱 / 最扛饿 / 最均衡）**各自排序各保留候选后再统一核价**，
+     避免最优解被单一价格排序提前剪掉。
+   - 新增 `--html` 生成可分享的可视化方案卡片。
+
+7. **效果验证与文档撰写**（10-15 ~ 10-17）
+   WorkBuddy 为 README 跑了一组**严格的领券前后对照实验**。
+   第一次对照不公平（按菜单价排序选候选，真实核价全涨），
+   改为两边都按**真实核价**各自取最优后重跑，才把结论放进 README。
+   随后重写 README（对照表 + 目录 + FAQ + 徽章）、补 MIT LICENSE、更新
+   `MCP_INTEGRATION.md` 与 `SKILL.md`。
+
+8. **建仓与推送**（10-15）
+   WorkBuddy 完成安全扫描（确认无 Token 残留）、`git init`、首次提交，
+   并协助排查 `git remote add` 报「远程已存在」的问题（改用 `git remote set-url`）。
 
 ## 真实运行记录
+
+以下为 WorkBuddy 调用麦当劳 MCP 实时接口的真实输出（上海黄浦门店，含真实领取的优惠券）：
 
 ```
 $ python3 scripts/optimizer.py --city 上海 --keyword 人民广场 --people 2 --budget 70 --kcal 800
@@ -67,4 +121,49 @@ $ python3 scripts/optimizer.py --people 4 --budget 150 --kcal 900 --extra 2
   实付 ¥74.50｜人均 ¥18.62｜省 ¥13.50（原价 ¥88.00，省 15%）
 ```
 
-以上结果于 2026-10-15 通过麦当劳 MCP 实时接口获取（含真实领取的优惠券）。
+**领券前后严格对照**（同一门店、同一约束 2 人 / ¥70 / 人均 ≤800 kcal，两边均取真实核价最优解）：
+
+| | 方案 | 实付 | 原价 | 热量 | 性价比 |
+| --- | --- | --- | --- | --- | --- |
+| 不用券 | 那么大鸡排 ×3 | ¥42.00 | ¥42.00 | 1155 kcal | 27.5 kcal/元 |
+| **用券** | 中薯条买一送一（券）×1 + 鸡排 ×2 | **¥41.50** | **¥55.00** | **1348 kcal** | **32.5 kcal/元** |
+
+结论：少花 ¥0.5，多吃 193 kcal，每元热量高 18%，另省 ¥13.50。
+
+## 实际调用的麦当劳 MCP Tool
+
+| Tool | 用途 |
+| --- | --- |
+| `query-nearby-stores` | 按城市 / 关键词定位门店，取 `storeCode` |
+| `query-meals` | 拉取门店完整菜单（104 个餐品）与分类 |
+| `query-meal-detail` | 拆出套餐默认组成，反推组合餐营养 |
+| `list-nutrition-foods` | 拉取官方营养表（160 条），建立名称→营养索引 |
+| `calculate-price` | 真实核价（区分原价 / 应付 / 优惠额，支持带券） |
+| `available-coupons` | 查询可领券 |
+| `auto-bind-coupons` | 一键领取麦麦省券（真实写操作） |
+| `query-store-coupons` | 查询门店可用券，建立券 ↔ 商品映射 |
+
+## WorkBuddy 生成的文件
+
+| 文件 | 说明 |
+| --- | --- |
+| `README.md` | 项目介绍、安装、用法、真实效果对照、FAQ |
+| `MCP_INTEGRATION.md` | MCP 调用流程与业务价值说明 |
+| `CONTEST_DECLARATION.md` | 官方参赛声明（原文未改动） |
+| `SKILL.md` | Skill 定义 |
+| `workbuddy.md` | 本文件 |
+| `mcp-config.example.json` | 脱敏 MCP 配置示例（仅环境变量占位符） |
+| `scripts/mcd_mcp.py` | MCP 客户端（含缓存、refresh、safe_call 降级） |
+| `scripts/nutrition.py` | 营养表解析与名称匹配索引 |
+| `scripts/optimizer.py` | 约束建模、组合枚举、券建模与核价主引擎 |
+| `docs/sample.html` | 真实运行生成的可视化方案卡片 |
+| `LICENSE` | MIT |
+
+## 声明
+
+- 本项目由开发者通过**腾讯 WorkBuddy**（Craft 模式）以对话方式完成开发，
+  上述接口实测记录、迭代修正过程与运行输出均为开发过程中真实产生的内容。
+- 项目中不含任何 Token、密钥等敏感信息，MCP 配置以环境变量占位符形式提供。
+- 本文件由 WorkBuddy 依开发过程导出，用于 WorkBuddy 专项奖励核验。
+
+生成时间：2026-10-17
